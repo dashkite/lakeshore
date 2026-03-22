@@ -1,0 +1,46 @@
+{
+  "name": "@dashkite/lakeshore",
+  "version": "0.0.0",
+  "description": "Broadway provider for mock APIs",
+  "keywords": [],
+  "homepage": "https://github.com/dashkite/lakeshore#readme",
+  "bugs": {
+    "url": "https://github.com/dashkite/lakeshore/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dashkite/lakeshore.git"
+  },
+  "license": "SEE LICENSE IN LICENSE.md",
+  "contributors": [
+    "Dan Yoder <dan@dashkite.com>",
+    "David Harper <david@dashkite.com>",
+    "Chand Rajendra-Nicolucci <chand@dashkite.com>"
+  ],
+  "exports": {
+    ".": {
+      "browser": "./build/browser/src/index.js",
+      "node": "./build/node/src/index.js"
+    }
+  },
+  "main": "build/node/src/index.js",
+  "files": [
+    "build/browser/src",
+    "build/node/src"
+  ],
+  "scripts": {
+    "test": "genie test",
+    "build": "genie build"
+  },
+  "devDependencies": {
+    "@dashkite/amen": "^0.9.14",
+    "@dashkite/amen-console": "^0.4.0",
+    "@dashkite/assert": "^0.1.4",
+    "@dashkite/genie": "^0.20.14",
+    "@dashkite/genie-clean": "^0.9.0",
+    "@dashkite/genie-coffee": "^0.9.0",
+    "@dashkite/genie-module": "link:../genie-module",
+    "@dashkite/genie-release": "^0.5.0",
+    "@dashkite/genie-watch": "^0.5.0"
+  }
+}
