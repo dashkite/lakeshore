@@ -13,7 +13,7 @@ class Lakeshore extends metaclass Provider
       if ( content = Storage.get url )?
         { description: "ok", content }
       else
-        description: "not found"
+        { description: "not found" }
 
     put: ({ url }, content ) ->
       Storage.set url, content
@@ -46,7 +46,8 @@ class Lakeshore extends metaclass Provider
     if @methods.get?
       response = @methods.get { @url, @bindings }
       if response.description == "ok"
-        @publish { name: "value", value: response.content }
+        if response.content?
+          @publish { name: "value", value: response.content }
       else
         @publish 
           name: response.description
@@ -62,6 +63,8 @@ class Lakeshore extends metaclass Provider
       response = @methods.put { @url, @bindings }, value
       if response.description == "ok"
         @publish { name: "value", value }
+      else if response.description == "created"
+        @publish { name: "created", value: response.content ? value }
     else
       @publish 
         name: "unsupported method"
