@@ -2,10 +2,11 @@ import Generic from "@dashkite/generic"
 import Storage from "@dashkite/storage"
 import Provider from "@dashkite/belmont/provider"
 import { Router } from "@dashkite/url-router"
-import { metaclass } from "@dashkite/joy/metaclass"
 
-# TODO probably move metaclass to Provider
-class Lakeshore extends metaclass Provider
+Normalize =
+  name: ( string ) -> string.toLowerCase().replace /\s+/g, "-"
+
+class Lakeshore extends Provider
 
   @defaults:
 
@@ -49,12 +50,19 @@ class Lakeshore extends metaclass Provider
       if response.description == "ok"
         @publish name: "value", scope: "resource", value: response.content
       else
-        name = response.description.toLowerCase().replace /\s+/g, "-"
-        @publish name: name, url: @url
-        @publish name: "failure", response: response
+        name = Normalize.name response.description
+        @publish { name, scope: "response", url: @url }
+        @publish name: "failure", scope: "response", response: response
     else
-      @publish name: "method-not-allowed", url: @url, method: "get"
-      @publish name: "failure", response: { description: "method-not-allowed" }
+      @publish
+        name: "method-not-allowed"
+        scope: "request"
+        url: @url
+        method: "get"
+      @publish
+        name: "failure"
+        scope: "request"
+        response: description: "method-not-allowed"
 
   put: ( value ) ->
     if @methods.put?
@@ -68,25 +76,39 @@ class Lakeshore extends metaclass Provider
         when "created"
           @publish name: "created", scope: "resource", value: ( response.content ? value )
         else
-          name = response.description.toLowerCase().replace /\s+/g, "-"
-          @publish name: name, value: ( response.content ? value )
-          @publish name: "failure", response: response
+          name = Normalize.name response.description
+          @publish { name, scope: "response", value: ( response.content ? value ) }
+          @publish name: "failure", scope: "response", response: response
     else
-      @publish name: "method-not-allowed", url: @url, method: "put"
-      @publish name: "failure", response: { description: "method-not-allowed" }
+      @publish
+        name: "method-not-allowed"
+        scope: "request"
+        url: @url
+        method: "put"
+      @publish
+        name: "failure"
+        scope: "request"
+        response: description: "method-not-allowed"
 
   delete: ->
     if @methods.delete?
-      response = await @methods.delete { @url, @bindings }
+      response = await @methods.get { @url, @bindings }
       if response.description == "ok"
         @publish name: "delete", scope: "resource"
       else
-        name = response.description.toLowerCase().replace /\s+/g, "-"
-        @publish name: name
-        @publish name: "failure", response: response
+        name = Normalize.name response.description
+        @publish { name, scope: "response", url: @url }
+        @publish name: "failure", scope: "response", response: response
     else
-      @publish name: "method-not-allowed", url: @url, method: "delete"
-      @publish name: "failure", response: { description: "method-not-allowed" }
+      @publish
+        name: "method-not-allowed"
+        scope: "request"
+        url: @url
+        method: "delete"
+      @publish
+        name: "failure"
+        scope: "request"
+        response: description: "method-not-allowed"
 
 
   post: ( value ) ->
@@ -102,11 +124,18 @@ class Lakeshore extends metaclass Provider
             value: ( response.content ? value )
             locator: response.locator
         else
-          name = response.description.toLowerCase().replace /\s+/g, "-"
-          @publish name: name, value: ( response.content ? value )
-          @publish name: "failure", response: response
+          name = Normalize.name response.description
+          @publish { name, scope: "response", value: ( response.content ? value ) }
+          @publish name: "failure", scope: "response", response: response
     else
-      @publish name: "method-not-allowed", url: @url, method: "post"
-      @publish name: "failure", response: { description: "method-not-allowed" }
+      @publish
+        name: "method-not-allowed"
+        scope: "request"
+        url: @url
+        method: "post"
+      @publish
+        name: "failure"
+        scope: "request"
+        response: description: "method-not-allowed"
 
 export default Lakeshore
