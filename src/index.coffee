@@ -16,15 +16,16 @@ class Lakeshore extends metaclass Provider
         { description: "not found" }
 
     put: ({ url }, content ) ->
+      exists = ( Storage.get url )?
       Storage.set url, content
-      { description: "ok", content }
+      { description: "ok", exists }
 
     delete: ({ url }) ->
       Storage.remove url
       { description: "ok" }
 
   @register: ( template, methods ) ->
-    @_resources ?= Router.make()    
+    @_resources ?= Router.make()
     @_resources.add { template, data: { methods }}
 
 
@@ -39,65 +40,73 @@ class Lakeshore extends metaclass Provider
           methods: @constructor.defaults
 
     methods: -> @match.methods
-      
+
     bindings: -> @match.bindings
 
   get: ->
     if @methods.get?
-      response = @methods.get { @url, @bindings }
+      response = await @methods.get { @url, @bindings }
       if response.description == "ok"
-        if response.content?
-          @publish { name: "value", value: response.content }
+        @publish name: "value", scope: "resource", value: response.content
       else
-        @publish 
-          name: response.description
-          url: @url
+        name = response.description.toLowerCase().replace /\s+/g, "-"
+        @publish name: name, url: @url
+        @publish name: "failure", response: response
     else
-      @publish 
-        name: "unsupported method"
-        url: @url
-        method: "get"
+      @publish name: "method-not-allowed", url: @url, method: "get"
+      @publish name: "failure", response: { description: "method-not-allowed" }
 
   put: ( value ) ->
     if @methods.put?
-      response = @methods.put { @url, @bindings }, value
-      if response.description == "ok"
-        @publish { name: "value", value }
-      else if response.description == "created"
-        @publish { name: "created", value: response.content ? value }
+      response = await @methods.put { @url, @bindings }, value
+      switch response.description
+        when "ok"
+          if response.exists
+            @publish name: "value", scope: "resource", value: ( response.content ? value )
+          else
+            @publish name: "created", scope: "resource", value: ( response.content ? value )
+        when "created"
+          @publish name: "created", scope: "resource", value: ( response.content ? value )
+        else
+          name = response.description.toLowerCase().replace /\s+/g, "-"
+          @publish name: name, value: ( response.content ? value )
+          @publish name: "failure", response: response
     else
-      @publish 
-        name: "unsupported method"
-        url: @url
-        method: "put"
+      @publish name: "method-not-allowed", url: @url, method: "put"
+      @publish name: "failure", response: { description: "method-not-allowed" }
 
   delete: ->
     if @methods.delete?
-      response = @methods.delete { @url, @bindings }
+      response = await @methods.delete { @url, @bindings }
       if response.description == "ok"
-          @publish { name: "delete" }
+        @publish name: "delete", scope: "resource"
+      else
+        name = response.description.toLowerCase().replace /\s+/g, "-"
+        @publish name: name
+        @publish name: "failure", response: response
     else
-      @publish 
-        name: "unsupported method"
-        url: @url
-        method: "delete"
+      @publish name: "method-not-allowed", url: @url, method: "delete"
+      @publish name: "failure", response: { description: "method-not-allowed" }
 
 
   post: ( value ) ->
     if @methods.post?
-      response = @methods.post { @url, @bindings }, value
+      response = await @methods.post { @url, @bindings }, value
       switch response.description
-        # how do we map this to an event?
-        # when "ok"
-        # how do we map this to an event?
-        # when "no content"
+        when "ok", "no content"
+          @publish name: "value", scope: "resource", value: ( response.content ? value )
         when "created"
-          @publish name: "create", value: response.content
-          @get() if @methods.get?
+          @publish 
+            name: "created"
+            scope: "resource"
+            value: ( response.content ? value )
+            locator: response.locator
+        else
+          name = response.description.toLowerCase().replace /\s+/g, "-"
+          @publish name: name, value: ( response.content ? value )
+          @publish name: "failure", response: response
     else
-      @publish 
-        name: "unsupported method"
-        url: @url
-        method: "post"
+      @publish name: "method-not-allowed", url: @url, method: "post"
+      @publish name: "failure", response: { description: "method-not-allowed" }
 
 export default Lakeshore
