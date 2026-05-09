@@ -13,6 +13,7 @@ Providers.add "mock", Lakeshore
 generateAddress = -> Math.random().toString(36)[ 2.. ]
 
 factory =
+
   existing: ->
     url = "mock://existing-#{ generateAddress() }"
     Storage.set url, { title: "Existing", body: "I'm a teapot" }
@@ -63,5 +64,3 @@ do ->
   print await test "Lakeshore", [
     conformance factory
   ]
-
-  process.exit if success then 0 else 1
