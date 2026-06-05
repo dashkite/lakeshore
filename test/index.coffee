@@ -15,49 +15,41 @@ generateAddress = -> Math.random().toString(36)[ 2.. ]
 factory =
 
   existing: ->
-    url = "mock://existing-#{ generateAddress() }"
-    Storage.set url, { title: "Existing", body: "I'm a teapot" }
-    Lakeshore.register url,
-      get: -> { description: "ok", content: { title: "Existing", body: "I'm a teapot" } }
-      put: ( { url }, data ) ->
-        exists = ( Storage.get url )?
-        Storage.set url, data
-        { description: "ok", exists, content: data }
-      delete: ( { url } ) ->
-        Storage.remove url
-        { description: "ok" }
-    resource = await Resource.resolve template: url
-    { resource }
+    do ({ url, data } = {}) ->
+      url = "mock://existing/#{ generateAddress() }"
+      data = title: "Existing", body: "I'm a teapot"
+      Storage.set url, data
+      resource = await Resource.resolve template: url
+      { resource }
 
   missing: ->
-    url = "mock://missing-#{ generateAddress() }"
-    Storage.remove url
-    resource = await Resource.resolve template: url
-    { resource }
+    do ({ url } = {}) ->
+      url = "mock://missing/#{ generateAddress() }"
+      resource = await Resource.resolve template: url
+      { resource }
 
   creatable: ->
-    url = "mock://creatable-#{ generateAddress() }"
-    Storage.remove url
-    Lakeshore.register url,
-      post: ( _, data ) -> 
-        { 
+    do ({ url, data } = {}) ->
+      url = "mock://creatable/#{ generateAddress() }"
+      data = title: "New", body: "I'm a teapot"
+      Storage.remove url
+      Lakeshore.register url,
+        post: ( _, data ) -> 
           description: "created"
           content: data
-          locator: { name: "new-resource", bindings: { id: "123" } }
-        }
-      put: ( { url }, data ) -> 
-        exists = ( Storage.get url )?
-        Storage.set url, data
-        { description: "ok", exists, content: data }
-    resource = await Resource.resolve template: url
-    { resource, data: { title: "New", body: "I'm a teapot" } }
+          locator: name: "new", bindings: foo: "bar"
+      resource = await Resource.resolve template: url
+      { resource, data }
 
   unsupported: ->
-    url = "mock://readonly-#{ generateAddress() }"
-    Lakeshore.register url,
-      get: -> { description: "ok", content: { title: "Read-only", body: "I'm a teapot" } }
-    resource = await Resource.resolve template: url
-    { resource, method: "put" }
+    do ({ url, data } = {}) ->
+      url = "mock://readonly/#{ generateAddress() }"
+      data = title: "Read me", body: "I'm a teapot"
+      Storage.set url, data
+      Lakeshore.register url,
+        get: -> data
+      resource = await Resource.resolve template: url
+      { resource, method: "put" }
 
 do ->
 

@@ -8,25 +8,29 @@ Normalize =
 
 class Lakeshore extends Provider
 
+  @_resources: Router.make()
+
   @defaults:
 
     get: ({ url }) ->
       if ( content = Storage.get url )?
         { description: "ok", content }
       else
-        { description: "not found" }
+        description: "not found"
 
     put: ({ url }, content ) ->
       exists = ( Storage.get url )?
       Storage.set url, content
-      { description: "ok", exists }
+      if exists
+        { description: "ok", content }
+      else
+        { description: "created", content }
 
     delete: ({ url }) ->
       Storage.remove url
-      { description: "ok" }
+      description: "ok"
 
   @register: ( template, methods ) ->
-    @_resources ?= Router.make()
     @_resources.add { template, data: { methods }}
 
 
@@ -69,10 +73,7 @@ class Lakeshore extends Provider
       response = await @methods.put { @url, @bindings }, value
       switch response.description
         when "ok"
-          if response.exists
-            @publish name: "value", scope: "resource", value: ( response.content ? value )
-          else
-            @publish name: "created", scope: "resource", value: ( response.content ? value )
+          @publish name: "value", scope: "resource", value: ( response.content ? value )
         when "created"
           @publish name: "created", scope: "resource", value: ( response.content ? value )
         else
@@ -92,9 +93,9 @@ class Lakeshore extends Provider
 
   delete: ->
     if @methods.delete?
-      response = await @methods.get { @url, @bindings }
+      response = await @methods.delete { @url, @bindings }
       if response.description == "ok"
-        @publish name: "delete", scope: "resource"
+        @publish name: "deleted", scope: "resource"
       else
         name = Normalize.name response.description
         @publish { name, scope: "response", url: @url }
