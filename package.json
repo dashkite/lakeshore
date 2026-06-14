@@ -1,6 +1,6 @@
 {
   "name": "@dashkite/lakeshore",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Broadway provider for mock APIs",
   "keywords": [],
   "homepage": "https://github.com/dashkite/lakeshore#readme",
