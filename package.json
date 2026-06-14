@@ -45,7 +45,7 @@
     "@dashkite/genie-watch": "0.5.0"
   },
   "dependencies": {
-    "@dashkite/belmont": "link:../belmont",
+    "@dashkite/belmont": "^0.3.28",
     "@dashkite/generic": "0.9.19",
     "@dashkite/joy": "0.12.40",
     "@dashkite/storage": "0.9.11",
